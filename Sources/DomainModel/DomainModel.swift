@@ -137,11 +137,13 @@ public class Job {
         type = ty
     }
     
-    func calculateIncome(amount : Int) -> Int {
+    func calculateIncome(_ amount : Int) -> Int {
         switch type {
         case .Hourly(let x):
-            let y : Int = Int(Double(x).rounded())
-            return y * amount
+            var y : Double = Double(Int(amount))
+            y = y * x
+            let result : Int = Int(Double(y).rounded())
+            return result
         case .Salary(let x):
             let y : Int = Int(UInt(x))
             return y
@@ -152,12 +154,14 @@ public class Job {
         var value : Double
         switch self.type {
         case .Hourly(let x):
-            value = (byPercent * 0.01 * x) + x
+            value = (byPercent * x) + x
+            print(value)
             self.type =  .Hourly(value)
         case .Salary(let x):
             value = Double(UInt(x))
-            value = (byPercent * 0.01 * value) + value
+            value = (byPercent * value) + value
             let y : UInt = UInt(Double(value).rounded())
+            print(value)
             self.type =  .Salary(y)
         }
     }
@@ -196,12 +200,28 @@ public class Job {
 ////////////////////////////////////
 // Person
 //
-public class Person : Hashable {
+public class Person : Equatable {
+    public static func == (lhs: Person, rhs: Person) -> Bool {
+        return lhs.age == rhs.age && lhs.firstName == rhs.firstName && lhs.lastName == rhs.lastName
+    }
+    
     var firstName: String
     var lastName: String
     var age: Int
-    weak var job : Job? = nil
-    weak var spouse : Person? = nil
+    var job : Job? = nil {
+        didSet {
+            if age < 21 {
+                self.job = nil
+            }
+        }
+    }
+    var spouse : Person? = nil {
+        didSet {
+            if age < 21 {
+                self.spouse = nil
+            }
+        }
+    }
     static var totalPeopleCt : Int = 0
     
     
@@ -217,17 +237,18 @@ public class Person : Hashable {
     }
     
     func toString() -> String {
-        var result : String
+        let nilStr: String? = "nil"
+        let result : String
         if spouse != nil && job != nil {
-            result = "[Person: firstName: \(firstName) lastName: \(lastName) age: \(age) job: \(Job.JobType.self) spouse: \(spouse!.firstName)]"
+            result = "[Person: firstName:\(firstName) lastName:\(lastName) age:\(age) job:\(String(describing: self.job?.type)) spouse:\(spouse!.firstName)]"
             return result
         } else if spouse != nil {
-            result = "[Person: firstName: \(firstName) lastName: \(lastName) age: \(age) spouse: \(spouse!.firstName)]"
+            result = "[Person: firstName:\(firstName) lastName:\(lastName) age:\(age) job:\(nilStr!) spouse:\(spouse!.firstName)]"
         } else if job != nil {
-            result = "[Person: firstName: \(firstName) lastName: \(lastName) age: \(age) job: \(Job.JobType.self)]"
+            result = "[Person: firstName:\(firstName) lastName:\(lastName) age:\(age) job:\(String(describing: self.job?.type))] spouse:\(nilStr!)]"
             return result
         } else {
-            result = "[Person: firstName: \(firstName) lastName: \(lastName) age: \(age)]"
+            result = "[Person: firstName:\(firstName) lastName:\(lastName) age:\(age) job:\(nilStr!) spouse:\(nilStr!)]"
             return result
         }
         return result
@@ -241,25 +262,28 @@ public class Family {
     enum marriedMoreThanOnce : Error {
         case MarriedMoreThanOnce
     }
-    var members : Set<Person>
+    var members : [Person] = []
     var spouse1 : Person
     var spouse2 : Person
     
-    init(spouse1 sp1: Person, spouse2 sp2: Person) throws {
-        if spouse1.spouse != nil || spouse2.spouse != nil {
-            throw marriedMoreThanOnce.MarriedMoreThanOnce
-        }
+    init(spouse1 sp1: Person, spouse2 sp2: Person) {
         spouse1 = sp1
         spouse2 = sp2
-        spouse1.spouse = spouse2
-        spouse2.spouse = spouse1
-        members.insert(spouse1)
-        members.insert(spouse2)
+        if spouse1.spouse == nil && spouse2.spouse == nil {
+            spouse1.spouse = spouse2
+            spouse2.spouse = spouse1
+        }
+        if !members.contains(spouse1) {
+            members.append(spouse1)
+        }
+        if !members.contains(spouse2) {
+            members.append(spouse2)
+        }
     }
     
-    func haveChild(name : Person) -> Bool {
-        if spouse1.age >= 21 || spouse2 >= 21 {
-            members.insert(name)
+    func haveChild(_ name : Person) -> Bool! {
+        if spouse1.age >= 21 || spouse2.age >= 21 {
+            members.append(name)
             if members.contains(name) {
                 return true
             }
@@ -267,11 +291,11 @@ public class Family {
         return false
     }
     
-    func householdIncome() -> Int {
+    func householdIncome() -> Int! {
         var total : Int = 0
         for p in members{
             if p.job != nil {
-                total += p.job!.calculateIncome(amount: 2000)
+                total += p.job?.calculateIncome(2000) ?? 0
             }
         }
         return total

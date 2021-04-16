@@ -5,6 +5,7 @@ class PersonTests: XCTestCase {
 
     func testPerson() {
         let ted = Person(firstName: "Ted", lastName: "Neward", age: 45)
+        print(ted.toString())
         XCTAssert(ted.toString() == "[Person: firstName:Ted lastName:Neward age:45 job:nil spouse:nil]")
     }
 
@@ -12,9 +13,11 @@ class PersonTests: XCTestCase {
         let matt = Person(firstName: "Matthew", lastName: "Neward", age: 15)
 
         matt.job = Job(title: "Burger-Flipper", type: Job.JobType.Hourly(5.5))
+        print(matt.toString())
         XCTAssert(matt.job == nil)
 
         matt.spouse = Person(firstName: "Bambi", lastName: "Jones", age: 42)
+        print(matt.toString())
         XCTAssert(matt.spouse == nil)
     }
 
@@ -65,6 +68,7 @@ class FamilyTests : XCTestCase {
         let _ = family.haveChild(matt)
 
         let familyIncome = family.householdIncome()
+        print(family.members)
         XCTAssert(familyIncome == 12000)
     }
   
